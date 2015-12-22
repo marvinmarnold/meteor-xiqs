@@ -1,3 +1,4 @@
+
 xiqs = {}
 
 if(Meteor.isServer) {
@@ -6,25 +7,20 @@ if(Meteor.isServer) {
     connect: function(host, port, onConnect) {
       var url = host + ":" + port
       console.log("connecting to ");
-      console.log(url);
+      var net = Npm.require('net');
 
-      this._socket = io(url);
-      // this._socket.connect(host + ":" + port);
-      // io(host + ":" + port);
+      this._socket = new net.Socket();
+      this._socket.connect(port, host, Meteor.bindEnvironment(function() {
+      	console.log('Connected');
+      	onConnect()
+      }));
 
-      this._socket.on('connection', function(data) {
-        console.log("on connect");
-        onConnect()
-      });
-
-      this._socket.on('command execution response', function(msg){
-        console.log('command execution response ' + msg);
-      });
-
-      this._socket.connect()
-      this.login(Meteor.settings.user, Meteor.settings.password)
+      // client.on('data', function(data) {
+      // 	console.log('Received: ' + data);
+      // 	client.destroy(); // kill client after server's response
+      // });
     },
-    login: function(username, password) {
+    login: function(username, password, onLogin) {
       console.log('login');
       var loginXIQS = {
         command: {
@@ -43,7 +39,13 @@ if(Meteor.isServer) {
       });
 
       console.log(xml.end({pretty: true}));
-      this._socket.emit("command invocation", xml.end())
+      var that = this
+      this._socket.on('data', Meteor.bindEnvironment(function(data) {
+      	console.log('Received: ' + data);
+      	that._socket.destroy(); // kill client after server's response
+        onLogin(data)
+      }));
+      this._socket.write(xml.end());
     }
   })
 }
