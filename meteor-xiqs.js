@@ -42,46 +42,37 @@ if(Meteor.isServer) {
       var that = this
       this._socket.on('data', Meteor.bindEnvironment(function(data) {
       	console.log('Received: ' + data);
-      	that._socket.destroy(); // kill client after server's response
-        onLogin(data)
+        onLogin(that._socket)
       }));
       this._socket.write(xml.end());
     }
-  })
-}
+  }),
+  deactivateXIQSObject: function(tid, integer, long) {
+    console.log('deactivateXIQSObject');
+    var obj = {
+      command: {
+        '@tid': tid,
+        '@name': "deactivateXIQSObject",
+        param: [
+          { '#text': integer, '@type': 'integer' },
+          { '#text': long, '@type': 'long' }
+        ],
+      }
+    };
 
-// [REQUEST]
-// <?xml version="1.0" encoding="UTF-8"?>
-// <command name="loginXIQS">
-//   <param type="string">administrator</param>
-//   <param type="string">iqsim</param>
-// </command>
-//
-// [ANSWER (OK)]
-// <?xml version="1.0" encoding="UTF-8"?>
-// <event type="return">
-//   <meta-data>
-//     <meta-value>
-//       <name>ret_code</name>
-//       <pos>1</pos>
-//     </meta-value>
-//   </meta-data>
-//   <param type="integer">1</param>
-// </event>
-//
-// [ANSWER (Error)]
-// <?xml version="1.0" encoding="UTF-8"?>
-// <event type="error">
-//   <meta-data>
-//     <meta-value>
-//       <name>err_code</name>
-//       <pos>1</pos>
-//     </meta-value>
-//     <meta-value>
-//       <name>err_desc</name>
-//       <pos>2</pos>
-//     </meta-value>
-//   </meta-data>
-//   <param type="integer">401</param>
-//   <param type="string"> err.user.notfound(administrator)</param>
-// </event>
+    var xml = XMLBuilder.create(obj, {
+      encoding: 'UTF-8',
+      standalone: 'yes',
+      separateArrayItems: false,
+      noDoubleEncoding: false,
+    });
+
+    var that = this
+    this._socket.on('data', Meteor.bindEnvironment(function(data) {
+      console.log('Received: ' + data);
+      that._socket.destroy(); // kill client after server's response
+      onLogin(data)
+    }));
+    this._socket.write(xml.end());
+  }
+}
